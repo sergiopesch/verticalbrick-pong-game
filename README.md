@@ -6,6 +6,8 @@
 ## Overview
 Vertical Brick Pong is a modern twist on the classic Pong and Breakout games. Control a paddle to bounce a pulsing ball and break colorful bricks arranged in a grid. Designed with a retro arcade aesthetic, this game is fully responsive and playable on both desktop and mobile devices, including iPhones.
 
+Designed and Made using Grok 3
+
 ## Features
 - **Responsive Design**: Adapts to any screen size, from large desktops to small mobile devices.
 - **Touch Controls**: Swipe on mobile screens to move the paddle, with keyboard support (arrow keys) for desktop.
