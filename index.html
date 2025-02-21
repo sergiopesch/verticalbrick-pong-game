@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Vertical Brick Pong</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
@@ -15,18 +15,29 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         #gameContainer {
             position: relative;
-            width: 800px;
-            margin: 20px auto;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         canvas {
             border: 2px solid #fff;
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
             display: block;
+            width: 100%;
+            height: auto;
+            max-width: 800px;
+            max-height: 600px;
         }
 
         #gameOverCard {
@@ -35,34 +46,39 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.95);
-            padding: 30px;
+            padding: 20px;
             border-radius: 15px;
             box-shadow: 0 0 30px rgba(255, 0, 0, 0.7);
             text-align: center;
             display: none;
             border: 2px solid #ff5722;
             animation: glow 1.5s infinite alternate;
+            width: 80%;
+            max-width: 400px;
         }
 
         #gameOverCard h2 {
             color: #ff5722;
             margin: 0 0 15px;
             text-shadow: 0 0 10px #ff5722;
+            font-size: clamp(16px, 4vw, 24px);
         }
 
         #gameOverCard p {
             color: #fff;
-            font-size: 16px;
+            font-size: clamp(12px, 3vw, 16px);
             margin: 0 0 20px;
             text-shadow: 0 0 5px #fff;
         }
 
         #controls {
-            margin-top: 15px;
+            margin-top: 10px;
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
+            padding: 10px;
         }
 
         #restartButton,
@@ -70,14 +86,15 @@
         #stopButton {
             background: linear-gradient(145deg, #ff5722, #d84315);
             border: 3px solid #fff;
-            padding: 15px 30px;
+            padding: clamp(10px, 2vw, 15px) clamp(20px, 4vw, 30px);
             color: #fff;
-            font-size: 18px;
+            font-size: clamp(12px, 3vw, 18px);
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s;
             text-shadow: 0 0 5px #ff5722;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            min-width: 100px;
         }
 
         #restartButton:hover,
@@ -97,7 +114,7 @@
         }
 
         #scoreLevel {
-            font-size: 16px;
+            font-size: clamp(12px, 3vw, 16px);
             text-shadow: 0 0 10px #fff;
         }
 
@@ -110,12 +127,22 @@
                 box-shadow: 0 0 40px rgba(255, 0, 0, 0.9);
             }
         }
+
+        @media (max-width: 600px) {
+            #controls {
+                flex-direction: column;
+            }
+
+            canvas {
+                max-height: 70vh;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div id="gameContainer">
-        <canvas id="pongCanvas" width="800" height="600"></canvas>
+        <canvas id="pongCanvas"></canvas>
         <div id="gameOverCard">
             <h2>Game Over!</h2>
             <p>Your Score: <span id="finalScore">0</span></p>
@@ -131,6 +158,8 @@
         try {
             const canvas = document.getElementById("pongCanvas");
             const ctx = canvas.getContext("2d");
+            if (!ctx) throw new Error("Canvas context not supported");
+
             const scoreDisplay = document.getElementById("score");
             const levelDisplay = document.getElementById("level");
             const gameOverCard = document.getElementById("gameOverCard");
@@ -139,39 +168,30 @@
             const startButton = document.getElementById("startButton");
             const stopButton = document.getElementById("stopButton");
 
-            // Ball properties
+            // Responsive canvas sizing
+            function resizeCanvas() {
+                const aspectRatio = 4 / 3;
+                const maxWidth = Math.min(window.innerWidth * 0.9, 800);
+                const maxHeight = Math.min(window.innerHeight * 0.7, 600);
+                canvas.width = maxWidth;
+                canvas.height = maxWidth / aspectRatio > maxHeight ? maxHeight : maxWidth / aspectRatio;
+                initGameElements(); // Reinitialize elements on resize
+            }
+            window.addEventListener("resize", resizeCanvas);
+
+            // Game objects
+            let scaleFactor;
             const ball = {
-                x: canvas.width / 2,
-                y: canvas.height - 100,
-                radius: 12,
-                speedX: 7,
-                speedY: -7,
-                color: "#ffeb3b",
-                pulse: 0,
-                pulseSpeed: 0.1
+                x: 0, y: 0, radius: 0, speedX: 0, speedY: 0,
+                color: "#ffeb3b", pulse: 0, pulseSpeed: 0.1
             };
 
-            // Paddle properties
-            const paddleWidth = 120;
-            const paddleHeight = 20;
+            let paddleWidth, paddleHeight;
             const paddle = {
-                x: canvas.width / 2 - paddleWidth / 2,
-                y: canvas.height - 50,
-                speed: 0,
-                maxSpeed: 12,
-                acceleration: 2,
-                friction: 1.5,
-                color: "#03a9f4"
+                x: 0, y: 0, speed: 0, maxSpeed: 0, acceleration: 0, friction: 0, color: "#03a9f4"
             };
 
-            // Brick properties
-            let brickRowCount = 3;
-            const brickColumnCount = 10;
-            const brickWidth = 60;
-            const brickHeight = 20;
-            const brickPadding = 10;
-            const brickOffsetTop = 50;
-            const brickOffsetLeft = (canvas.width - (brickColumnCount * (brickWidth + brickPadding))) / 2;
+            let brickRowCount, brickColumnCount, brickWidth, brickHeight, brickPadding, brickOffsetTop, brickOffsetLeft;
             const brickColors = ["#ff5722", "#4caf50", "#9c27b0", "#ff9800", "#2196f3"];
             let bricks = [];
             let score = 0;
@@ -181,6 +201,35 @@
             // Control flags
             let leftPressed = false;
             let rightPressed = false;
+            let touchX = null;
+
+            // Initialize game elements
+            function initGameElements() {
+                scaleFactor = canvas.width / 800;
+                ball.radius = 12 * scaleFactor;
+                ball.speedX = 7 * scaleFactor;
+                ball.speedY = -7 * scaleFactor;
+                ball.x = canvas.width / 2;
+                ball.y = canvas.height - 100 * scaleFactor;
+
+                paddleWidth = 120 * scaleFactor;
+                paddleHeight = 20 * scaleFactor;
+                paddle.maxSpeed = 12 * scaleFactor;
+                paddle.acceleration = 2 * scaleFactor;
+                paddle.friction = 1.5 * scaleFactor;
+                paddle.x = canvas.width / 2 - paddleWidth / 2;
+                paddle.y = canvas.height - 50 * scaleFactor;
+                paddle.speed = 0;
+
+                brickWidth = 60 * scaleFactor;
+                brickHeight = 20 * scaleFactor;
+                brickPadding = 10 * scaleFactor;
+                brickOffsetTop = 50 * scaleFactor;
+                brickColumnCount = Math.floor((canvas.width - brickPadding) / (brickWidth + brickPadding));
+                brickRowCount = Math.min(3 + level - 1, Math.floor((canvas.height * 0.4) / (brickHeight + brickPadding)));
+                brickOffsetLeft = (canvas.width - (brickColumnCount * (brickWidth + brickPadding))) / 2;
+                initBricks();
+            }
 
             // Event listeners
             document.addEventListener("keydown", (e) => {
@@ -192,17 +241,29 @@
                 if (e.key === "ArrowRight") rightPressed = false;
             });
 
+            canvas.addEventListener("touchstart", (e) => {
+                e.preventDefault();
+                touchX = e.touches[0].clientX - canvas.offsetLeft;
+            });
+            canvas.addEventListener("touchmove", (e) => {
+                e.preventDefault();
+                const newTouchX = e.touches[0].clientX - canvas.offsetLeft;
+                paddle.x = Math.max(0, Math.min(canvas.width - paddleWidth, newTouchX - paddleWidth / 2));
+                touchX = newTouchX;
+            });
+            canvas.addEventListener("touchend", () => {
+                touchX = null;
+            });
+
             restartButton.addEventListener("click", () => {
                 gameOverCard.style.display = "none";
                 resetGame();
                 gameActive = true;
-                draw();
             });
 
             startButton.addEventListener("click", () => {
                 if (!gameActive) {
                     gameActive = true;
-                    draw();
                 }
             });
 
@@ -213,11 +274,7 @@
             // Background image
             const backgroundImage = new Image();
             backgroundImage.src = "https://via.placeholder.com/800x600.png?text=Arcade+Pong+Background";
-            backgroundImage.onload = () => {
-                console.log("Background image loaded");
-                draw();
-            };
-            backgroundImage.onerror = () => console.error("Failed to load background image");
+            backgroundImage.onload = () => draw();
 
             // Initialize bricks
             function initBricks() {
@@ -235,7 +292,6 @@
                     }
                 }
             }
-            initBricks();
 
             // Draw functions
             function drawRect(x, y, width, height, color) {
@@ -338,17 +394,16 @@
                 ) {
                     ball.speedY = -Math.abs(ball.speedY) * 1.05;
                     const hitPos = (ball.x - paddle.x) / paddleWidth;
-                    ball.speedX = 12 * (hitPos - 0.5);
+                    ball.speedX = 12 * scaleFactor * (hitPos - 0.5);
                     ball.color = brickColors[Math.floor(Math.random() * brickColors.length)];
                 }
 
-                // Game over check
+                // Game over
                 if (ball.y > canvas.height) {
                     gameActive = false;
                     showGameOver();
                 }
 
-                // Check for brick collisions
                 collisionDetection();
 
                 // Level up
@@ -357,7 +412,7 @@
                     levelDisplay.textContent = level;
                     ball.speedX *= 1.1;
                     ball.speedY *= 1.1;
-                    brickRowCount = Math.min(brickRowCount + 1, 8);
+                    brickRowCount = Math.min(brickRowCount + 1, Math.floor((canvas.height * 0.4) / (brickHeight + brickPadding)));
                     initBricks();
                     resetBall();
                 }
@@ -365,9 +420,9 @@
 
             function resetBall() {
                 ball.x = canvas.width / 2;
-                ball.y = canvas.height - 100;
-                ball.speedX = 7 * (Math.random() > 0.5 ? 1 : -1);
-                ball.speedY = -7;
+                ball.y = canvas.height - 100 * scaleFactor;
+                ball.speedX = 7 * scaleFactor * (Math.random() > 0.5 ? 1 : -1);
+                ball.speedY = -7 * scaleFactor;
             }
 
             function resetGame() {
@@ -375,13 +430,8 @@
                 level = 1;
                 scoreDisplay.textContent = score;
                 levelDisplay.textContent = level;
-                ball.speedX = 7;
-                ball.speedY = -7;
                 brickRowCount = 3;
-                initBricks();
-                resetBall();
-                paddle.x = canvas.width / 2 - paddleWidth / 2;
-                paddle.speed = 0;
+                initGameElements();
             }
 
             function showGameOver() {
@@ -391,6 +441,7 @@
 
             // Render game
             function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas each frame
                 if (backgroundImage.complete && backgroundImage.naturalWidth > 0) {
                     ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
                 } else {
@@ -408,11 +459,13 @@
                 requestAnimationFrame(gameLoop);
             }
 
-            // Initial draw and start loop
-            draw();
-            requestAnimationFrame(gameLoop);
+            // Initial setup
+            resizeCanvas(); // Set initial size and elements
+            requestAnimationFrame(gameLoop); // Start the game loop
+
         } catch (error) {
             console.error("Error in game initialization:", error);
+            alert("Failed to start the game. Check the console for details.");
         }
     </script>
 </body>
