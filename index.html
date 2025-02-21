@@ -6,38 +6,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Vertical Brick Pong</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
+        html,
         body {
-            background: #222;
-            text-align: center;
-            color: #fff;
-            font-family: 'Press Start 2P', cursive;
             margin: 0;
             padding: 0;
+            height: 100%;
             overflow: hidden;
-            height: 100vh;
+            background: #222;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        body {
             display: flex;
             flex-direction: column;
+            align-items: center;
             justify-content: center;
         }
 
         #gameContainer {
             position: relative;
-            width: 100%;
+            width: 90vw;
             max-width: 800px;
+            height: 60vh;
+            /* Reduced to fit mobile screens */
+            max-height: 600px;
             margin: 0 auto;
-            padding: 10px;
-            box-sizing: border-box;
         }
 
         canvas {
+            width: 100%;
+            height: 100%;
             border: 2px solid #fff;
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
             display: block;
-            width: 100%;
-            height: auto;
-            max-width: 800px;
-            max-height: 600px;
         }
 
         #gameOverCard {
@@ -46,62 +50,64 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(0, 0, 0, 0.95);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.7);
             text-align: center;
             display: none;
             border: 2px solid #ff5722;
             animation: glow 1.5s infinite alternate;
             width: 80%;
-            max-width: 400px;
+            max-width: 300px;
         }
 
         #gameOverCard h2 {
             color: #ff5722;
-            margin: 0 0 15px;
+            margin: 0 0 10px;
             text-shadow: 0 0 10px #ff5722;
-            font-size: clamp(16px, 4vw, 24px);
+            font-size: clamp(14px, 4vw, 20px);
         }
 
         #gameOverCard p {
             color: #fff;
-            font-size: clamp(12px, 3vw, 16px);
-            margin: 0 0 20px;
+            font-size: clamp(10px, 3vw, 14px);
+            margin: 0 0 15px;
             text-shadow: 0 0 5px #fff;
         }
 
         #controls {
-            margin-top: 10px;
+            margin: 10px 0;
             display: flex;
+            flex-direction: row;
             flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: 15px;
-            padding: 10px;
+            gap: 10px;
+            width: 90vw;
+            max-width: 800px;
         }
 
         #restartButton,
         #startButton,
         #stopButton {
             background: linear-gradient(145deg, #ff5722, #d84315);
-            border: 3px solid #fff;
-            padding: clamp(10px, 2vw, 15px) clamp(20px, 4vw, 30px);
+            border: 2px solid #fff;
+            padding: clamp(8px, 2vw, 12px) clamp(15px, 3vw, 20px);
             color: #fff;
-            font-size: clamp(12px, 3vw, 18px);
-            border-radius: 10px;
+            font-size: clamp(10px, 2.5vw, 14px);
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
             text-shadow: 0 0 5px #ff5722;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            min-width: 100px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5);
+            min-width: 80px;
         }
 
         #restartButton:hover,
         #startButton:hover,
         #stopButton:hover {
             background: linear-gradient(145deg, #ff8a50, #ff5722);
-            box-shadow: 0 0 20px #ff5722;
+            box-shadow: 0 0 15px #ff5722;
             transform: translateY(-2px);
         }
 
@@ -109,32 +115,38 @@
         #startButton:active,
         #stopButton:active {
             background: linear-gradient(145deg, #d84315, #bf360c);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
             transform: translateY(2px);
         }
 
         #scoreLevel {
-            font-size: clamp(12px, 3vw, 16px);
-            text-shadow: 0 0 10px #fff;
+            font-size: clamp(10px, 2.5vw, 14px);
+            text-shadow: 0 0 8px #fff;
         }
 
         @keyframes glow {
             from {
-                box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+                box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
             }
 
             to {
-                box-shadow: 0 0 40px rgba(255, 0, 0, 0.9);
+                box-shadow: 0 0 20px rgba(255, 0, 0, 0.9);
             }
         }
 
         @media (max-width: 600px) {
+            #gameContainer {
+                height: 50vh;
+                /* Further reduced for smaller screens */
+            }
+
             #controls {
                 flex-direction: column;
+                gap: 8px;
             }
 
             canvas {
-                max-height: 70vh;
+                height: 100%;
             }
         }
     </style>
@@ -170,14 +182,18 @@
 
             // Responsive canvas sizing
             function resizeCanvas() {
+                const container = document.getElementById("gameContainer");
                 const aspectRatio = 4 / 3;
-                const maxWidth = Math.min(window.innerWidth * 0.9, 800);
-                const maxHeight = Math.min(window.innerHeight * 0.7, 600);
-                canvas.width = maxWidth;
-                canvas.height = maxWidth / aspectRatio > maxHeight ? maxHeight : maxWidth / aspectRatio;
-                initGameElements(); // Reinitialize elements on resize
+                canvas.width = container.clientWidth;
+                canvas.height = canvas.width / aspectRatio;
+                if (canvas.height > container.clientHeight) {
+                    canvas.height = container.clientHeight;
+                    canvas.width = canvas.height * aspectRatio;
+                }
+                initGameElements();
             }
             window.addEventListener("resize", resizeCanvas);
+            window.addEventListener("orientationchange", resizeCanvas);
 
             // Game objects
             let scaleFactor;
@@ -207,26 +223,26 @@
             function initGameElements() {
                 scaleFactor = canvas.width / 800;
                 ball.radius = 12 * scaleFactor;
-                ball.speedX = 7 * scaleFactor;
-                ball.speedY = -7 * scaleFactor;
+                ball.speedX = 5 * scaleFactor; // Reduced speed for mobile
+                ball.speedY = -5 * scaleFactor;
                 ball.x = canvas.width / 2;
                 ball.y = canvas.height - 100 * scaleFactor;
 
-                paddleWidth = 120 * scaleFactor;
+                paddleWidth = 100 * scaleFactor; // Slightly smaller paddle
                 paddleHeight = 20 * scaleFactor;
-                paddle.maxSpeed = 12 * scaleFactor;
+                paddle.maxSpeed = 10 * scaleFactor;
                 paddle.acceleration = 2 * scaleFactor;
                 paddle.friction = 1.5 * scaleFactor;
                 paddle.x = canvas.width / 2 - paddleWidth / 2;
                 paddle.y = canvas.height - 50 * scaleFactor;
                 paddle.speed = 0;
 
-                brickWidth = 60 * scaleFactor;
+                brickWidth = 50 * scaleFactor; // Smaller bricks for mobile
                 brickHeight = 20 * scaleFactor;
-                brickPadding = 10 * scaleFactor;
-                brickOffsetTop = 50 * scaleFactor;
+                brickPadding = 5 * scaleFactor;
+                brickOffsetTop = 30 * scaleFactor;
                 brickColumnCount = Math.floor((canvas.width - brickPadding) / (brickWidth + brickPadding));
-                brickRowCount = Math.min(3 + level - 1, Math.floor((canvas.height * 0.4) / (brickHeight + brickPadding)));
+                brickRowCount = Math.min(3 + level - 1, Math.floor((canvas.height * 0.3) / (brickHeight + brickPadding)));
                 brickOffsetLeft = (canvas.width - (brickColumnCount * (brickWidth + brickPadding))) / 2;
                 initBricks();
             }
@@ -243,11 +259,11 @@
 
             canvas.addEventListener("touchstart", (e) => {
                 e.preventDefault();
-                touchX = e.touches[0].clientX - canvas.offsetLeft;
+                touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
             });
             canvas.addEventListener("touchmove", (e) => {
                 e.preventDefault();
-                const newTouchX = e.touches[0].clientX - canvas.offsetLeft;
+                const newTouchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
                 paddle.x = Math.max(0, Math.min(canvas.width - paddleWidth, newTouchX - paddleWidth / 2));
                 touchX = newTouchX;
             });
@@ -361,7 +377,6 @@
             function update() {
                 if (!gameActive) return;
 
-                // Paddle movement
                 if (leftPressed && paddle.x > 0) {
                     paddle.speed = Math.max(paddle.speed - paddle.acceleration, -paddle.maxSpeed);
                 } else if (rightPressed && paddle.x < canvas.width - paddleWidth) {
@@ -374,11 +389,9 @@
                 paddle.x += paddle.speed;
                 paddle.x = Math.max(0, Math.min(canvas.width - paddleWidth, paddle.x));
 
-                // Move ball
                 ball.x += ball.speedX;
                 ball.y += ball.speedY;
 
-                // Ball collision with walls
                 if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
                     ball.speedX = -ball.speedX;
                 }
@@ -386,7 +399,6 @@
                     ball.speedY = -ball.speedY;
                 }
 
-                // Ball collision with paddle
                 if (
                     ball.y + ball.radius > paddle.y &&
                     ball.x > paddle.x &&
@@ -394,11 +406,10 @@
                 ) {
                     ball.speedY = -Math.abs(ball.speedY) * 1.05;
                     const hitPos = (ball.x - paddle.x) / paddleWidth;
-                    ball.speedX = 12 * scaleFactor * (hitPos - 0.5);
+                    ball.speedX = 10 * scaleFactor * (hitPos - 0.5);
                     ball.color = brickColors[Math.floor(Math.random() * brickColors.length)];
                 }
 
-                // Game over
                 if (ball.y > canvas.height) {
                     gameActive = false;
                     showGameOver();
@@ -406,13 +417,12 @@
 
                 collisionDetection();
 
-                // Level up
                 if (bricks.every(col => col.every(brick => brick.status === 0))) {
                     level++;
                     levelDisplay.textContent = level;
                     ball.speedX *= 1.1;
                     ball.speedY *= 1.1;
-                    brickRowCount = Math.min(brickRowCount + 1, Math.floor((canvas.height * 0.4) / (brickHeight + brickPadding)));
+                    brickRowCount = Math.min(brickRowCount + 1, Math.floor((canvas.height * 0.3) / (brickHeight + brickPadding)));
                     initBricks();
                     resetBall();
                 }
@@ -421,8 +431,8 @@
             function resetBall() {
                 ball.x = canvas.width / 2;
                 ball.y = canvas.height - 100 * scaleFactor;
-                ball.speedX = 7 * scaleFactor * (Math.random() > 0.5 ? 1 : -1);
-                ball.speedY = -7 * scaleFactor;
+                ball.speedX = 5 * scaleFactor * (Math.random() > 0.5 ? 1 : -1);
+                ball.speedY = -5 * scaleFactor;
             }
 
             function resetGame() {
@@ -441,7 +451,7 @@
 
             // Render game
             function draw() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas each frame
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 if (backgroundImage.complete && backgroundImage.naturalWidth > 0) {
                     ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
                 } else {
@@ -460,8 +470,8 @@
             }
 
             // Initial setup
-            resizeCanvas(); // Set initial size and elements
-            requestAnimationFrame(gameLoop); // Start the game loop
+            resizeCanvas();
+            requestAnimationFrame(gameLoop);
 
         } catch (error) {
             console.error("Error in game initialization:", error);

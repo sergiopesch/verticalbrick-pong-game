@@ -1,7 +1,7 @@
 # Vertical Brick Pong
 
-![Game Screenshot](https://via.placeholder.com/800x600.png?text=Vertical+Brick+Pong)  
-*(Replace this with an actual screenshot URL after deployment)*
+![Game Screenshot](ScreenRecording.gif)  
+
 
 ## Overview
 Vertical Brick Pong is a modern twist on the classic Pong and Breakout games. Control a paddle to bounce a pulsing ball and break colorful bricks arranged in a grid. Designed with a retro arcade aesthetic, this game is fully responsive and playable on both desktop and mobile devices, including iPhones.
